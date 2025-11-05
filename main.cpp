@@ -5,6 +5,8 @@ using namespace std;
 #include <fstream>
 #include <set>
 
+using namespace std;
+
 struct implicant
 {
     set<int> mins;
@@ -76,6 +78,7 @@ public:
         return implicant(bits,a,b);
     }
 
+
     vector<implicant> matching()
     {
         vector<implicant> matched;
@@ -85,12 +88,31 @@ public:
         return matched;
     }
 
+string IntegerToBinary(int m,int NumberOfVariables) {
 
+        string binary="";
+        while (m>0) {
+            int rem = m%2;
+            if (rem==0) {
+                binary += '0';
+            }else
+                binary += '1';
+
+            m = m/2;
+        }
+        reverse(binary.begin(),binary.end());
+        if (binary.length()<NumberOfVariables) {
+            while (binary.length() < NumberOfVariables) {
+                binary.insert(0, "0"); 
+            }
+        }
+
+        return binary;
+    }
 
     void printAllPIs()
     {
     }
-
 
     void PITable()
     { 
