@@ -9,7 +9,7 @@ using namespace std;
 
 struct implicant
 {
-    vector<int> mins;
+    set<int> mins;
     string binary;
     bool marked;
 
@@ -24,6 +24,18 @@ struct implicant
         binary = "";
         marked = false;
     }
+    implicant(string b,int m) {
+        binary = b;
+        mins.insert(m);
+    }
+
+    implicant( string bits, implicant &t1, implicant &t2 ) {
+        mins.insert(t1.mins.begin(), t1.mins.end());
+        mins.insert(t2.mins.begin(), t2.mins.end());
+        marked=true;
+        binary = bits;
+    }
+
 };
 
 class QuineMclausky
@@ -108,11 +120,26 @@ public:
 
     bool isGreyCode(implicant a, implicant b)
     {
+        int change=0;
+        for(int i=0;i<a.binary.length();i++) {
+            if (a.binary[i] != b.binary[i]) {
+                change++;
+            }
+
+        }
+
+        return change==1;
     }
 
-    implicant merge()
-    { // uses isGreyCode()
-        
+    implicant merge(implicant a, implicant b)
+    {
+        string bits=a.binary;
+        for(int i=0;i<a.binary.length();i++) {
+            if (a.binary[i] != b.binary[i]) {
+                bits[i] = '-';
+            }
+        }
+        return implicant(bits,a,b);
     }
 
     vector<implicant> matching()
@@ -153,7 +180,7 @@ public:
             cout << minterms[i] << " ";
         }
         cout << endl;
-        for (int i = 0; i < dontcares.size(); i++)
+        for (int i = 0; i < dontcares.size(); i++)      
         {
             cout << dontcares[i] << " ";
         }
@@ -171,7 +198,7 @@ private:
 int main()
 {
     QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\Test4.txt");
+    app.infile.open("TestFiles/Test2.txt");
     if (app.infile.is_open())
     {
         cout << "processing\n";
