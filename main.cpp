@@ -6,7 +6,7 @@ using namespace std;
 #include <set>
 #include <sstream>
 #include <algorithm>
-
+using namespace std;
 struct implicant
 {
     set<int> mins;
@@ -130,6 +130,28 @@ public:
 
         return change==1;
     }
+    string IntegerToBinary(int m,int NumberOfVariables) {
+
+        string binary="";
+        while (m>0) {
+            int rem = m%2;
+            if (rem==0) {
+                binary += '0';
+            }else
+                binary += '1';
+
+            m = m/2;
+        }
+        reverse(binary.begin(),binary.end());
+        if (binary.length()<NumberOfVariables) {
+            while (binary.length() < NumberOfVariables) {
+                binary.insert(0, "0");
+            }
+        }
+
+        return binary;
+    }
+
 
     implicant merge(implicant a, implicant b)
     {
