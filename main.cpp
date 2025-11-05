@@ -22,6 +22,11 @@ struct implicant
         binary = "";
         marked = false;
     }
+    implicant(string b,int m) {
+        binary = b;
+        mins.insert(m);
+    }
+
     implicant( string bits, implicant &t1, implicant &t2 ) {
         mins.insert(t1.mins.begin(), t1.mins.end());
         mins.insert(t2.mins.begin(), t2.mins.end());
