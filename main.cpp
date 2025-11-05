@@ -42,6 +42,15 @@ public:
 
     bool isGreyCode(implicant a, implicant b)
     {
+        int change=0;
+        for(int i=0;i<a.binary.length();i++) {
+            if (a.binary[i] != b.binary[i]) {
+                change++;
+            }
+
+        }
+
+        return change==1;
     }
 
     implicant merge()
@@ -94,7 +103,7 @@ private:
 int main()
 {
     QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\Test4.txt");
+    app.infile.open("TestFiles/Test2.txt");
     if (app.infile.is_open())
         cout << "processing";
     else
