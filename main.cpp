@@ -37,9 +37,6 @@ public:
         // should assign the intvar and assign it to the number of minterms;
     }
 
-
-
-
     bool isGreyCode(implicant a, implicant b)
     {
     }
@@ -53,27 +50,21 @@ public:
         vector<implicant> matched;
         // uses readtxt() and merge()
 
-        
         return matched;
     }
-
-
 
     void printAllPIs()
     {
     }
 
-
     void PITable()
-    { 
+    {
         vector<implicant> matched = matching();
         // uses matching to get the PI vector and minterms vector member and would use the printing fucntions later as final outputs
 
-    //should create a vector<implicant> done/finalisedPIs, 
-    //to make printOutputExp() use it as the final out put and maybe printVerilogModule() also
+        // should create a vector<implicant> done/finalisedPIs,
+        // to make printOutputExp() use it as the final out put and maybe printVerilogModule() also
     }
-
-
 
     void printOutputExp()
     {
@@ -94,7 +85,7 @@ private:
 int main()
 {
     QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\Test4.txt");
+    app.infile.open("Test4.txt");
     if (app.infile.is_open())
         cout << "processing";
     else
