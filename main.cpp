@@ -7,7 +7,7 @@ using namespace std;
 
 struct implicant
 {
-    vector<int> mins;
+    set<int> mins;
     string binary;
     bool marked;
 
@@ -22,6 +22,13 @@ struct implicant
         binary = "";
         marked = false;
     }
+    implicant( string bits, implicant &t1, implicant &t2 ) {
+        mins.insert(t1.mins.begin(), t1.mins.end());
+        mins.insert(t2.mins.begin(), t2.mins.end());
+        marked=true;
+        binary = bits;
+    }
+
 };
 
 class QuineMclausky
@@ -53,8 +60,15 @@ public:
         return change==1;
     }
 
-    implicant merge()
-    { // uses isGreyCode()
+    implicant merge(implicant a, implicant b)
+    {
+        string bits=a.binary;
+        for(int i=0;i<a.binary.length();i++) {
+            if (a.binary[i] != b.binary[i]) {
+                bits[i] = '-';
+            }
+        }
+        return implicant(bits,a,b);
     }
 
     vector<implicant> matching()
