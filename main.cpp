@@ -197,6 +197,29 @@ public:
         return binary;
     }
 
+    void sortC(vector<implicant> &C)
+    {
+        for (int i = 0; i < C.size() - 1; i++) // simple selection sort alg.
+        {
+            int minIndex = i;
+            for (int j = i + 1; j < C.size(); j++)
+            {
+                int firstA = *(C[minIndex].mins.begin());
+                int firstB = *(C[j].mins.begin());
+
+                if (firstB < firstA)
+                {
+                    minIndex = j;
+                }
+            }
+            if (minIndex != i)
+            {
+                swap(C[i], C[minIndex]);
+            }
+        }
+        return;
+    }
+
     bool allIsNotMarked(vector<implicant> c)
     {
         for (int i = 0; i < c.size(); i++)
@@ -206,16 +229,6 @@ public:
         }
         return true;
     }
-
-    // bool noGreyCodeFound(vector<implicant> c)
-    // {
-    //     for (int i = 0; i < c.size(); i++)
-    //     {
-    //         if (c[i].marked == true)
-    //             return false;
-    //     }
-    //     return true;
-    // }
 
     void matching()
     {
@@ -239,25 +252,8 @@ public:
             columns[0].push_back(pi);
         }
 
-        // sorting (I believe may not be needed?)
-        for (int i = 0; i < columns[0].size() - 1; i++) // simple selection sort alg.
-        {
-            int minIndex = i;
-            for (int j = i + 1; j < columns[0].size(); j++)
-            {
-                int firstA = *(columns[0][minIndex].mins.begin());
-                int firstB = *(columns[0][j].mins.begin());
-
-                if (firstB < firstA)
-                {
-                    minIndex = j;
-                }
-            }
-            if (minIndex != i)
-            {
-                swap(columns[0][i], columns[0][minIndex]);
-            }
-        }
+        // sorting
+        sortC(columns[0]);
         // now columns[0] is sorted
 
         int k = 0;
@@ -266,6 +262,8 @@ public:
         while (!GreyCodeFound && k < columns.size())
         {
             GreyCodeFound = true;
+            sortC(columns[k]);
+            
             for (int i = 0; i < columns[k].size() - 1; i++)
             {
                 for (int j = i + 1; j < columns[k].size(); j++)
@@ -282,6 +280,7 @@ public:
                     }
                 }
             }
+
             k++;
             // cout << k << " "; // for testing
         }
@@ -292,7 +291,20 @@ public:
             {
                 if (columns[i][j].marked == false)
                 {
-                    matched.push_back(columns[i][j]);
+                    bool isUnique = true; // checking for uniqueness
+                    for (int k = 0; k < matched.size(); k++)
+                    {
+                        if (matched[k] == columns[i][j])
+                        {
+                            isUnique = false;
+                            break;
+                        }
+                    }
+                    if (isUnique)
+                    {
+                        matched.push_back(columns[i][j]);
+                        // cout << i << " " << j << endl;
+                    }
                 }
             }
         }
@@ -308,14 +320,14 @@ public:
 
     void printAllFinalPIs()
     {
-        cout << "\nAll the possible Prime Implicants are:\n\n";
+        cout << "\nAll the possible Prime Implicants are:\n";
 
         for (int i = 0; i < matched.size(); i++)
         {
-            cout << "PI: (";
+            cout << "PI" << i + 1 << ": (";
             for (int a : matched[i].mins)
             {
-                cout << a << ", ";
+                cout << a << " ";
             }
             cout << ") --> " << matched[i].binary << endl;
         }
@@ -368,7 +380,7 @@ int main()
     app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test4.txt");
     if (app.infile.is_open())
     {
-        cout << "processing\n";
+        // cout << "processing\n";
         app.readtxt();
         app.printMembers();
         cout << endl;
