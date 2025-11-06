@@ -169,39 +169,12 @@ public:
         {
             if (a.binary[i] != b.binary[i])
             {
-                bits[i] = '_';
+                bits[i] = '-';
             }
         }
         return implicant(bits, a, b);
     }
 
-    string IntegerToBinary(int m, int NumberOfVariables)
-    {
-
-        string binary = "";
-        while (m > 0)
-        {
-            int rem = m % 2;
-            if (rem == 0)
-            {
-                binary += '0';
-            }
-            else
-                binary += '1';
-
-            m = m / 2;
-        }
-        reverse(binary.begin(), binary.end());
-        if (binary.length() < NumberOfVariables)
-        {
-            while (binary.length() < NumberOfVariables)
-            {
-                binary.insert(0, "0");
-            }
-        }
-
-        return binary;
-    }
 
     void sortC(vector<implicant> &C)
     {
@@ -238,7 +211,7 @@ public:
 
     void matching()
     {
-        readtxt();
+
 
         // uses readtxt() and merge()
         // needs to create the implicants int he first column first.
@@ -510,6 +483,34 @@ public:
 
     void printOutputExp()
     {
+        cout << "\n## Final Minimal Solution ##\n";
+
+        // Handle cases with no solution
+        if (finalPIs.empty())
+        {
+            if (minterms.empty()) // If there were no minterms, the answer is 0
+            {
+                cout << "Solution is 0 (no minterms)." << endl;
+            }
+            else // If there were minterms but no PIs, something is wrong
+            {
+                cout << "Error: No solution found!" << endl;
+            }
+            return;
+        }
+
+        // Print each PI in the final solution
+        for (int i = 0; i < finalPIs.size(); i++)
+        {
+            cout << "Term " << i + 1 << ": (";
+
+            // Print all minterms covered by this PI
+            for (int a : finalPIs[i].mins)
+            {
+                cout << a << " ";
+            }
+            cout << ") --> " << finalPIs[i].binary << endl;
+        }
     }
 
     void printVerilogModule()
@@ -543,21 +544,24 @@ private:
 
 int main()
 {
-    QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test4.txt");
-    if (app.infile.is_open())
-    {
-        // cout << "processing\n";
-        app.readtxt();
-        app.printMembers();
-        cout << endl;
 
-        app.matching();
-        app.printAllFinalPIs();
+        QuineMclausky app;
+
+
+        app.infile.open("/Users/aliahmed/Documents/DD1-Project-1/TestFiles/Test2.txt");
+
+        if (app.infile.is_open())
+        {
+            cout << "File opened successfully. Processing...\n";
+
+
+            app.readtxt();
+
+            app.PITable();
+        }
+        else
+        {
+            perror("Error opening file");
+        }
+        return 0;
     }
-    else
-    {
-        perror("Error opening file");
-    }
-    return 0;
-}
