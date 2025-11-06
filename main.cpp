@@ -483,34 +483,7 @@ public:
 
     void printOutputExp()
     {
-        cout << "\n## Final Minimal Solution ##\n";
-
-        // Handle cases with no solution
-        if (finalPIs.empty())
-        {
-            if (minterms.empty()) // If there were no minterms, the answer is 0
-            {
-                cout << "Solution is 0 (no minterms)." << endl;
-            }
-            else // If there were minterms but no PIs, something is wrong
-            {
-                cout << "Error: No solution found!" << endl;
-            }
-            return;
-        }
-
-        // Print each PI in the final solution
-        for (int i = 0; i < finalPIs.size(); i++)
-        {
-            cout << "Term " << i + 1 << ": (";
-
-            // Print all minterms covered by this PI
-            for (int a : finalPIs[i].mins)
-            {
-                cout << a << " ";
-            }
-            cout << ") --> " << finalPIs[i].binary << endl;
-        }
+        
     }
 
     void printVerilogModule()
