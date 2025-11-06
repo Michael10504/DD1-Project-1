@@ -1,3 +1,3 @@
-/Users/aliahmed/Documents/DD1-Project-1/build/CMakeFiles/DD1_Project_1.dir
-/Users/aliahmed/Documents/DD1-Project-1/build/CMakeFiles/edit_cache.dir
-/Users/aliahmed/Documents/DD1-Project-1/build/CMakeFiles/rebuild_cache.dir
+C:/Users/Mohammad Dawood/Desktop/Digital Design I/Project 1/DD1-Project-1/build/CMakeFiles/DD1_Project_1.dir
+C:/Users/Mohammad Dawood/Desktop/Digital Design I/Project 1/DD1-Project-1/build/CMakeFiles/edit_cache.dir
+C:/Users/Mohammad Dawood/Desktop/Digital Design I/Project 1/DD1-Project-1/build/CMakeFiles/rebuild_cache.dir

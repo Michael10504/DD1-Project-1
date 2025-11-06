@@ -1,1 +1,3 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/DD1_Project_1.dir/main.cpp.o -o DD1_Project_1
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\DD1_Project_1.dir/objects.a
+C:\msys64\ucrt64\bin\ar.exe qc CMakeFiles\DD1_Project_1.dir/objects.a @CMakeFiles\DD1_Project_1.dir\objects1.rsp
+C:\msys64\ucrt64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\DD1_Project_1.dir/objects.a -Wl,--no-whole-archive -o DD1_Project_1.exe -Wl,--out-implib,libDD1_Project_1.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\DD1_Project_1.dir\linkLibs.rsp
