@@ -2,6 +2,7 @@
 using namespace std;
 #include <vector>
 #include <string>
+#include <map>
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -28,7 +29,7 @@ struct implicant
     {
         binary = b;
         mins.insert(m);
-        marked == false;
+        marked = false;
     }
 
     implicant(string bits, implicant &t1, implicant &t2)
@@ -133,28 +134,33 @@ public:
 
         return change == 1;
     }
-    string IntegerToBinary(int m,int NumberOfVariables) {
+    string IntegerToBinary(int m, int NumberOfVariables)
+    {
 
-        string binary="";
-        while (m>0) {
-            int rem = m%2;
-            if (rem==0) {
+        string binary = "";
+        while (m > 0)
+        {
+            int rem = m % 2;
+            if (rem == 0)
+            {
                 binary += '0';
-            }else
+            }
+            else
                 binary += '1';
 
-            m = m/2;
+            m = m / 2;
         }
-        reverse(binary.begin(),binary.end());
-        if (binary.length()<NumberOfVariables) {
-            while (binary.length() < NumberOfVariables) {
+        reverse(binary.begin(), binary.end());
+        if (binary.length() < NumberOfVariables)
+        {
+            while (binary.length() < NumberOfVariables)
+            {
                 binary.insert(0, "0");
             }
         }
 
         return binary;
     }
-
 
     implicant merge(implicant a, implicant b)
     {
@@ -263,7 +269,7 @@ public:
         {
             GreyCodeFound = true;
             sortC(columns[k]);
-            
+
             for (int i = 0; i < columns[k].size() - 1; i++)
             {
                 for (int j = i + 1; j < columns[k].size(); j++)
@@ -335,18 +341,178 @@ public:
 
     void PITable()
     {
-        matching();
+        matching(); // returns all prime implicants
+
+        finalPIs.clear(); // to clear the final solution vector
+
+        if (minterms.empty())
+        {
+            cout << "No minterms to cover." << endl;
+            // will print nothing, should be handled in the print functions.
+            printOutputExp();
+            printVerilogModule();
+            return;
+        }
+
+        if (matched.empty() && !minterms.empty())
+        {
+            cout << "Error: Minterms exist but there are no Prime Implicants" << endl;
+            return;
+        }
+
+        // We now form the chart
+
+        // convert minterm values into column indices
+        map<int, int> minterm_to_column;
+        for (int i = 0; i < minterms.size(); i++)
+        {
+            minterm_to_column[minterms[i]] = i;
+        }
+
+        // chart[row][col] : chart[PI_index][minterm_index]
+        vector<vector<bool>> chart(matched.size(), vector<bool>(minterms.size(), false)); // we set all entries in the chart to false
+
+        // Now fill the the chart
+        for (int i = 0; i < matched.size(); i++)
+        { // For each PI (row)
+            for (int minterm_in_pi : matched[i].mins)
+            { // Check if this minterm is one of our original minterms
+                if (minterm_to_column.count(minterm_in_pi))
+                {
+                    int col_index = minterm_to_column[minterm_in_pi];
+                    chart[i][col_index] = true; // As if we mark 'X' in the chart
+                }
+            }
+        }
+        // We now find essential prime implicants, columns that have only one 'X'
+
+        vector<bool> minterm_covered(minterms.size(), false); // to check if the minterm is covered or not;
+        vector<bool> pi_used(matched.size(), false);          // to check if the prime implicant was used before;
+
+        bool found_essential;
+        do
+        {
+            found_essential = false; // Assume none are found in this loop at the beginning
+
+            // Iterate through each column (minterm)
+            for (int j = 0; j < minterms.size(); j++)
+            {
+                if (minterm_covered[j])
+                    continue;
+
+                int cover_count = 0;
+                int last_pi_index = -1;
+                // Iterate through each ROW (PI) for this column
+                for (int i = 0; i < matched.size(); i++)
+                {
+                    if (chart[i][j])
+                    {
+                        cover_count++;
+                        last_pi_index = i;
+                    }
+                }
+                // If count is 1, it's an essential PI
+                if (cover_count == 1)
+                {
+                    // Check if we have already used this PI
+                    if (pi_used[last_pi_index])
+                        continue;
+
+                    found_essential = true;
+                    int pi_index = last_pi_index;
+
+                    // we add this PI to our final solution
+                    finalPIs.push_back(matched[pi_index]);
+                    pi_used[pi_index] = true;
+
+                    // mark all minterms covered by this PI as covered
+                    for (int k = 0; k < minterms.size(); k++)
+                    {
+                        if (chart[pi_index][k])
+                        {
+                            minterm_covered[k] = true;
+                        }
+                    }
+                }
+            }
+        } while (found_essential);
+
+        // We now need to cover Remaining Minterms
+        // Had to search the web for the algorithm, it's called Set Cover Approach using Greedy
+
+        bool all_covered = false;
+        while (!all_covered)
+        {
+            // Check if all minterms are covered
+            all_covered = true;
+            for (bool covered : minterm_covered)
+            {
+                if (!covered)
+                {
+                    all_covered = false;
+                    break;
+                }
+            }
+            if (all_covered)
+                break; // exit the loop because all minterms are covered
+
+            // Find the remaining PI that covers the most uncovered minterms
+            int best_pi_index = -1;
+            int max_new_covered = 0;
+            for (int i = 0; i < matched.size(); i++)
+            {
+                if (pi_used[i])
+                    continue; // skip the PI if it is already used
+
+                int current_new_covered = 0;
+                // Count how many new minterms the PI covers;
+                for (int j = 0; j < minterms.size(); j++)
+                {
+                    if (!minterm_covered[j] && chart[i][j])
+                    {
+                        current_new_covered++;
+                    }
+                }
+                if (current_new_covered > max_new_covered)
+                {
+                    max_new_covered = current_new_covered;
+                    best_pi_index = i;
+                }
+            }
+            if (best_pi_index == -1) // This shouldn't happen if matching() is correct, but will leave it for debugging
+            {
+                cout << "error: Could not cover all minterms." << endl;
+                break;
+            }
+
+            // Add the best PI to our solution
+            finalPIs.push_back(matched[best_pi_index]);
+            pi_used[best_pi_index] = true;
+
+            // Mark all minterms that the PI we added covers as 'covered'
+            for (int k = 0; k < minterms.size(); k++)
+            {
+                if (chart[best_pi_index][k])
+                {
+                    minterm_covered[k] = true;
+                }
+            }
+        }
+
         // uses matching to get the PI vector and minterms vector members modified and would use the printing fucntions later as final outputs
 
         // should create a vector<implicant> done/finalisedPIs,
         // to make printOutputExp() use it as the final out put and maybe printVerilogModule() also
+
+        printOutputExp();
+        printVerilogModule(); // should print both the output expressions and verilog module
     }
 
     void printOutputExp()
     {
     }
 
-    void printVerliogModule()
+    void printVerilogModule()
     {
     }
 
@@ -372,6 +538,7 @@ private:
 
     vector<vector<implicant>> columns;
     vector<implicant> matched;
+    vector<implicant> finalPIs; // to include the final set of Prime implicants that form the solution
 };
 
 int main()
