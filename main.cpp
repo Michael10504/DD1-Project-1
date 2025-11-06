@@ -8,6 +8,8 @@ using namespace std;
 #include <sstream>
 #include <algorithm>
 using namespace std;
+#include <iomanip>
+
 struct implicant
 {
     set<int> mins;
@@ -134,6 +136,7 @@ public:
 
         return change == 1;
     }
+
     string IntegerToBinary(int m, int NumberOfVariables)
     {
 
@@ -175,7 +178,6 @@ public:
         return implicant(bits, a, b);
     }
 
-
     void sortC(vector<implicant> &C)
     {
         for (int i = 0; i < C.size() - 1; i++) // simple selection sort alg.
@@ -211,7 +213,6 @@ public:
 
     void matching()
     {
-
 
         // uses readtxt() and merge()
         // needs to create the implicants int he first column first.
@@ -288,32 +289,44 @@ public:
             }
         }
 
-        cout << "matching() is done!\n"; // for testing
+        // cout << "matching() is done!\n"; // for testing
 
-        if (matched.empty())
-            cout << "matched is empty!\n";
-        else
-            cout << "matched have things in it!\n";
-        return;
+        // if (matched.empty())
+        //     cout << "matched is empty!\n";
+        // else
+        //     cout << "matched have things in it!\n";
+        // return;
     }
 
-    void printAllFinalPIs()
+    void printAllPossiblePIs()
     {
         cout << "\nAll the possible Prime Implicants are:\n";
 
         for (int i = 0; i < matched.size(); i++)
         {
-            cout << "PI" << i + 1 << ": (";
+
+            cout << "PI" << setw(2) << i + 1 << ":" << " (";
+            bool first = true;
             for (int a : matched[i].mins)
             {
-                cout << a << " ";
+                if (!first)
+                    cout << ", ";
+                cout << a;
+                first = false;
             }
-            cout << ") --> " << matched[i].binary << endl;
+
+            cout << ")" << setw(2) << " --> " << matched[i].binary << endl;
         }
     }
 
     void PITable()
     {
+        
+        // uses matching to get the PI vector and minterms vector members modified 
+        // and would use the printing fucntions later as final outputs (cancelled)
+        // should create a vector<implicant> done/finalisedPIs,
+
+
         matching(); // returns all prime implicants
 
         finalPIs.clear(); // to clear the final solution vector
@@ -472,37 +485,116 @@ public:
             }
         }
 
-        // uses matching to get the PI vector and minterms vector members modified and would use the printing fucntions later as final outputs
+        return;
+    }
 
-        // should create a vector<implicant> done/finalisedPIs,
-        // to make printOutputExp() use it as the final out put and maybe printVerilogModule() also
+    void printAllFinalPIs()
+    {
+        cout << "\nThe solution Prime Implicants are:\n";
 
-        printOutputExp();
-        printVerilogModule(); // should print both the output expressions and verilog module
+        for (int i = 0; i < finalPIs.size(); i++)
+        {
+
+            cout << "PI" << setw(2) << i + 1 << ":" << " (";
+            bool first = true;
+            for (int a : finalPIs[i].mins)
+            {
+                if (!first)
+                    cout << ", ";
+                cout << a;
+                first = false;
+            }
+
+            cout << ")" << setw(2) << " --> " << finalPIs[i].binary << endl;
+        }
     }
 
     void printOutputExp()
     {
-        
+        cout << "\nThe Final Expression:\n";
+        cout << "f(";
+        bool first = true;
+        for (int i = 0; i < numvar; i++)
+        {
+            if (!first)
+                cout << ", ";
+            cout << char(i + 65);
+            first = false;
+        }
+        cout << ") = ";
+
+        first = true;
+        for (implicant a : finalPIs)
+        {
+            if (!first)
+                cout << " + ";
+            bool firstVar = true; // nested flag method
+            for (int i = 0; i < a.binary.size(); i++)
+            {
+                if (a.binary[i] == '0' || a.binary[i] == '1') // only in these cases we should print a corresponding variable
+                {
+                    if (!firstVar)
+                        cout << '.';
+
+                    if (a.binary[i] == '0')
+                        cout << char(i + 65) << '\'';
+
+                    if (a.binary[i] == '1')
+                        cout << char(i + 65);
+
+                    firstVar = false;
+                }
+            }
+            first = false;
+        }
+        cout << endl;
+        return;
     }
 
-    void printVerilogModule()
+    void printVerilogModule(const string &moduleName = "Function")
     {
+        cout << "\nVerilog Module:\n\n";
+        cout << "module function();\n";
+
+        cout << "\nendmodule\n";
     }
 
     void printMembers() // for testing
     {
-        cout << numvar << endl;
-        for (int i = 0; i < minterms.size(); i++)
-        {
-            cout << minterms[i] << " ";
-        }
+        cout << "\nNumber of Variables: " << numvar << endl;
+        cout << "minterms: ";
+        if (minterms.empty())
+            cout << "---";
+        else
+            for (int i = 0; i < minterms.size(); i++)
+            {
+                cout << minterms[i] << " ";
+            }
         cout << endl;
-        for (int i = 0; i < dontcares.size(); i++)
-        {
-            cout << dontcares[i] << " ";
-        }
+
+        cout << "dontcares: ";
+        if (dontcares.empty())
+            cout << "---";
+        else
+            for (int i = 0; i < dontcares.size(); i++)
+            {
+                cout << dontcares[i] << " ";
+            }
         cout << endl;
+    }
+
+    void runQM() //literally runs everthing/all the functions
+    {
+        readtxt();
+        PITable();
+
+        printMembers();
+        printAllPossiblePIs();
+        printAllFinalPIs();
+
+        printOutputExp();
+        printVerilogModule();
+        return;
     }
 
 private:
@@ -518,23 +610,17 @@ private:
 int main()
 {
 
-        QuineMclausky app;
+    QuineMclausky app;
+    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test2.txt");
 
-
-        app.infile.open("/Users/aliahmed/Documents/DD1-Project-1/TestFiles/Test2.txt");
-
-        if (app.infile.is_open())
-        {
-            cout << "File opened successfully. Processing...\n";
-
-
-            app.readtxt();
-
-            app.PITable();
-        }
-        else
-        {
-            perror("Error opening file");
-        }
-        return 0;
+    if (app.infile.is_open())
+    {
+        // cout << "File opened successfully. Processing...\n";
+        app.runQM();
     }
+    else
+    {
+        perror("Error opening file");
+    }
+    return 0;
+}
