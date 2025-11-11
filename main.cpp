@@ -9,6 +9,7 @@ using namespace std;
 #include <algorithm>
 using namespace std;
 #include <iomanip>
+#include <cmath>
 
 struct implicant
 {
@@ -51,16 +52,14 @@ public:
     }
     ifstream infile;
 
-    // vector<implicant> readtxt()
-    vector<implicant> readtxt()
+    void readtxt()
     {
-        vector<implicant> result; // optional return
         string line;
 
         if (!infile.is_open())
         {
             cout << "Error: file is not open.\n";
-            return result;
+            return;
         }
 
         if (getline(infile, line))
@@ -69,61 +68,149 @@ public:
         }
         else
         {
-            numvar = 0; // zero variables
-            // return result;
+            numvar = 0; // no variables
+            return;
         }
 
         if (getline(infile, line))
         {
-            string integer = "";
-            for (char a : line)
+            int curr = 0;
+            int next = 1;
+
+            while (next < line.size())
             {
-                if (isdigit(a)) // example: mmmmgmhdm 100,mnjfsd50
+                if (line[next] == ' ')
                 {
-                    integer += a;
+                    // skips
                 }
-                else if (!integer.empty()) // you arrived at a char after a bunch of digits, so it should check if you have any ints or not to flush them into the vector with stoi() of course
+                if ((line[curr] == 'M' || line[curr] == 'm') && isdigit(line[next])) // m1 -> m 1
                 {
-                    minterms.push_back(stoi(integer));
-                    integer = ""; // to make room for next ints
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
+                }
+                else if (isdigit(line[curr]) && line[next] == ',') // 1, -> 1 ,
+                {
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
+                }
+                else if (line[curr] == ',' && isalpha(line[next])) //,m -> , m
+                {
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
+                }
+
+                curr++;
+                next++;
+            }
+        }
+
+        stringstream ss(line);
+        string token;
+
+        if (line[0] == 'm')
+        {
+            while (ss >> token)
+            {
+                if (token[0] == ',')
+                {
+                    continue;
+                }
+                else if (isdigit(token[0]))
+                {
+                    minterms.push_back(stoi(token));
+                }
+            }
+        }
+        else if (line[0] == 'M')
+        {
+            vector<int> Maxterms;
+            while (ss >> token)
+            {
+                if (token[0] == ',')
+                {
+                    continue;
+                }
+                else if (isdigit(token[0]))
+                {
+                    Maxterms.push_back(stoi(token));
                 }
             }
 
-            if (!integer.empty()) // since when we finish the line there won't be any char to flush the final int, so this ensures it.
+            vector<int> temp(pow(2, numvar), 0);
+
+            for (int a : Maxterms)
             {
-                minterms.push_back(stoi(integer));
-                integer = "";
+                temp[a] = 1;
+            }
+
+            for (int i = 0; i < temp.size(); i++)
+            {
+                if (temp[i] == 0)
+                {
+                    minterms.push_back(i);
+                }
             }
         }
 
         if (getline(infile, line))
         {
-            string integer = "";
+            int curr = 0;
+            int next = 1;
 
-            for (char a : line) // same thing for the dontcares
+            while (next < line.size())
             {
-                if (isdigit(a))
+                if (line[next] == ' ')
                 {
-                    integer += a;
+                    // skips
                 }
-                else if (!integer.empty())
+                if (line[curr] == 'd' && isdigit(line[next])) // m1 -> m 1
                 {
-                    dontcares.push_back(stoi(integer));
-                    integer = "";
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
                 }
-            }
+                else if (isdigit(line[curr]) && line[next] == ',') // 1, -> 1 ,
+                {
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
+                }
+                else if (line[curr] == ',' && isalpha(line[next])) //,m -> , m
+                {
+                    line.insert(line.begin() + next, ' ');
+                    next++;
+                    curr++;
+                }
 
-            if (!integer.empty())
-            {
-                dontcares.push_back(stoi(integer));
-                integer = "";
+                curr++;
+                next++;
             }
         }
 
-        return result;
+        ss.clear();
+        ss.str(line);
+        if (line[0] == 'd')
+        {
+            while (ss >> token)
+            {
+                if (token[0] == ',')
+                {
+                    continue;
+                }
+                if (isdigit(token[0]))
+                {
+                    dontcares.push_back(stoi(token));
+                }
+            }
+        }
+        return;
     }
 
-    bool isGreyCode(implicant a, implicant b)
+    bool
+    isGreyCode(implicant a, implicant b)
     {
         int change = 0;
         for (int i = 0; i < a.binary.length(); i++)
@@ -288,19 +375,11 @@ public:
                 }
             }
         }
-
-        // cout << "matching() is done!\n"; // for testing
-
-        // if (matched.empty())
-        //     cout << "matched is empty!\n";
-        // else
-        //     cout << "matched have things in it!\n";
-        // return;
     }
 
     void printAllPossiblePIs()
     {
-        cout << "\nAll the possible Prime Implicants are:\n";
+        cout << "\n\nAll the possible Prime Implicants are:\n";
 
         for (int i = 0; i < matched.size(); i++)
         {
@@ -317,15 +396,16 @@ public:
 
             cout << ")" << setw(2) << " --> " << matched[i].binary << endl;
         }
+
+        cout << "\n---------------------------------------------------------------";
     }
 
     void PITable()
     {
-        
-        // uses matching to get the PI vector and minterms vector members modified 
+
+        // uses matching to get the PI vector and minterms vector members modified
         // and would use the printing fucntions later as final outputs (cancelled)
         // should create a vector<implicant> done/finalisedPIs,
-
 
         matching(); // returns all prime implicants
 
@@ -490,7 +570,7 @@ public:
 
     void printAllFinalPIs()
     {
-        cout << "\nThe solution Prime Implicants are:\n";
+        cout << "\n\nThe solution Prime Implicants are:\n";
 
         for (int i = 0; i < finalPIs.size(); i++)
         {
@@ -507,11 +587,13 @@ public:
 
             cout << ")" << setw(2) << " --> " << finalPIs[i].binary << endl;
         }
+
+        cout << "\n---------------------------------------------------------------";
     }
 
     void printOutputExp()
     {
-        cout << "\nThe Final Expression:\n";
+        cout << "\n\nThe Final Expression:\n";
         cout << "f(";
         bool first = true;
         for (int i = 0; i < numvar; i++)
@@ -528,13 +610,13 @@ public:
         {
             if (!first)
                 cout << " + ";
-            bool firstVar = true; // nested flag method
+            // bool firstVar = true; // nested flag method
             for (int i = 0; i < a.binary.size(); i++)
             {
                 if (a.binary[i] == '0' || a.binary[i] == '1') // only in these cases we should print a corresponding variable
                 {
-                    if (!firstVar)
-                        cout << '.';
+                    // if (!firstVar)
+                    //     cout << '.';
 
                     if (a.binary[i] == '0')
                         cout << char(i + 65) << '\'';
@@ -542,27 +624,30 @@ public:
                     if (a.binary[i] == '1')
                         cout << char(i + 65);
 
-                    firstVar = false;
+                    //                firstVar = false;
                 }
             }
             first = false;
         }
         cout << endl;
+        cout << "\n---------------------------------------------------------------";
         return;
     }
 
     void printVerilogModule(const string &moduleName = "Function")
     {
-        cout << "\nVerilog Module:\n\n";
+        cout << "\n\nVerilog Module:\n\n";
         cout << "module function();\n";
 
         cout << "\nendmodule\n";
+        cout << "\n---------------------------------------------------------------";
     }
 
     void printMembers() // for testing
     {
-        cout << "\nNumber of Variables: " << numvar << endl;
-        cout << "minterms: ";
+        cout << "\n\nGivens:\n";
+        cout << "Number of Variables: " << numvar << endl;
+        cout << "Minterms Involved: ";
         if (minterms.empty())
             cout << "---";
         else
@@ -572,7 +657,7 @@ public:
             }
         cout << endl;
 
-        cout << "dontcares: ";
+        cout << "Don't Cares Involved: ";
         if (dontcares.empty())
             cout << "---";
         else
@@ -581,10 +666,12 @@ public:
                 cout << dontcares[i] << " ";
             }
         cout << endl;
+        cout << "\n---------------------------------------------------------------";
     }
 
-    void runQM() //literally runs everthing/all the functions
+    void runQM() // literally runs everthing/all the functions
     {
+        cout << "\n---------------------------------------------------------------";
         readtxt();
         PITable();
 
@@ -611,11 +698,12 @@ int main()
 {
 
     QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test2.txt");
+    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test1.txt");
 
     if (app.infile.is_open())
     {
-        // cout << "File opened successfully. Processing...\n";
+        cout << "---------------------------------------------------------------\n";
+        cout << "File opened successfully. Processing...";
         app.runQM();
     }
     else
