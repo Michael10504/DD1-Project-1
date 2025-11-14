@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 #include <vector>
 #include <string>
 #include <map>
@@ -7,19 +6,30 @@ using namespace std;
 #include <set>
 #include <sstream>
 #include <algorithm>
-using namespace std;
 #include <iomanip>
 #include <cmath>
+
+using namespace std;
 
 struct implicant
 {
     set<int> mins;
     string binary;
     bool marked;
+    int id; // will be used in the recursive algorithm search
 
     bool operator==(implicant b)
     {
         return (this->mins == b.mins && this->binary == b.binary);
+    }
+
+    bool operator<(const implicant &b) const
+    {
+        if (id != b.id)
+            return id < b.id;
+        if (binary != b.binary)
+            return binary < b.binary;
+        return mins < b.mins;
     }
 
     implicant()
@@ -27,12 +37,15 @@ struct implicant
         mins = {0};
         binary = "";
         marked = false;
+        id = -1; // Added default id
     }
+
     implicant(string b, int m)
     {
         binary = b;
         mins.insert(m);
         marked = false;
+        id = -1;
     }
 
     implicant(string bits, implicant &t1, implicant &t2)
@@ -41,15 +54,15 @@ struct implicant
         mins.insert(t2.mins.begin(), t2.mins.end());
         marked = false;
         binary = bits;
+        id = -1; // Added default id
     }
 };
 
 class QuineMclausky
 {
 public:
-    QuineMclausky()
-    {
-    }
+    QuineMclausky() {}
+
     ifstream infile;
 
     void readtxt()
@@ -140,7 +153,6 @@ public:
             }
 
             vector<int> temp(pow(2, numvar), 0);
-
             for (int a : Maxterms)
             {
                 temp[a] = 1;
@@ -184,7 +196,6 @@ public:
                     next++;
                     curr++;
                 }
-
                 curr++;
                 next++;
             }
@@ -209,8 +220,7 @@ public:
         return;
     }
 
-    bool
-    isGreyCode(implicant a, implicant b)
+    bool isGreyCode(implicant a, implicant b)
     {
         int change = 0;
         for (int i = 0; i < a.binary.length(); i++)
@@ -220,13 +230,11 @@ public:
                 change++;
             }
         }
-
         return change == 1;
     }
 
     string IntegerToBinary(int m, int NumberOfVariables)
     {
-
         string binary = "";
         while (m > 0)
         {
@@ -236,12 +244,20 @@ public:
                 binary += '0';
             }
             else
+            {
                 binary += '1';
-
+            }
             m = m / 2;
         }
         reverse(binary.begin(), binary.end());
-        if (binary.length() < NumberOfVariables)
+
+        while (binary.length() < NumberOfVariables)
+        {
+            binary.insert(0, "0");
+        }
+
+        // Handle m=0 case
+        if (NumberOfVariables > 0 && binary.empty())
         {
             while (binary.length() < NumberOfVariables)
             {
@@ -267,7 +283,8 @@ public:
 
     void sortC(vector<implicant> &C)
     {
-        for (int i = 0; i < C.size() - 1; i++) // simple selection sort alg.
+        // simple selection sort alg.
+        for (int i = 0; i < C.size() - 1; i++)
         {
             int minIndex = i;
             for (int j = i + 1; j < C.size(); j++)
@@ -300,9 +317,8 @@ public:
 
     void matching()
     {
-
         // uses readtxt() and merge()
-        // needs to create the implicants int he first column first.
+        // needs to create the implicants in the first column first.
 
         columns.clear();
         columns.push_back(vector<implicant>()); // to make columns[0] available
@@ -324,8 +340,8 @@ public:
         // now columns[0] is sorted
 
         int k = 0;
-
         bool GreyCodeFound = false;
+
         while (!GreyCodeFound && k < columns.size())
         {
             GreyCodeFound = true;
@@ -338,8 +354,9 @@ public:
                     if (isGreyCode(columns[k][i], columns[k][j]))
                     {
                         if (columns.size() <= k + 1) // to make sure that there is an available column to push_back into
+                        {
                             columns.push_back(vector<implicant>());
-
+                        }
                         columns[k + 1].push_back(merge(columns[k][i], columns[k][j]));
                         columns[k][i].marked = true;
                         columns[k][j].marked = true;
@@ -347,7 +364,6 @@ public:
                     }
                 }
             }
-
             k++;
             // cout << k << " "; // for testing
         }
@@ -359,9 +375,9 @@ public:
                 if (columns[i][j].marked == false)
                 {
                     bool isUnique = true; // checking for uniqueness
-                    for (int k = 0; k < matched.size(); k++)
+                    for (int l = 0; l < matched.size(); l++)
                     {
-                        if (matched[k] == columns[i][j])
+                        if (matched[l] == columns[i][j])
                         {
                             isUnique = false;
                             break;
@@ -375,6 +391,11 @@ public:
                 }
             }
         }
+
+        for (int i = 0; i < matched.size(); ++i)
+        {
+            matched[i].id = i;
+        } // we assign ids to the minterms
     }
 
     void printAllPossiblePIs()
@@ -383,7 +404,6 @@ public:
 
         for (int i = 0; i < matched.size(); i++)
         {
-
             cout << "PI" << setw(2) << i + 1 << ":" << " (";
             bool first = true;
             for (int a : matched[i].mins)
@@ -393,30 +413,26 @@ public:
                 cout << a;
                 first = false;
             }
-
             cout << ")" << setw(2) << " --> " << matched[i].binary << endl;
         }
-
         cout << "\n---------------------------------------------------------------";
     }
 
     void PITable()
     {
-
         // uses matching to get the PI vector and minterms vector members modified
         // and would use the printing fucntions later as final outputs (cancelled)
         // should create a vector<implicant> done/finalisedPIs,
-
         matching(); // returns all prime implicants
 
-        finalPIs.clear(); // to clear the final solution vector
+        finalEPIs.clear(); // to clear the Essential Prime Implicants vector
+        finalSol.clear();
 
         if (minterms.empty())
         {
             cout << "No minterms to cover." << endl;
             // will print nothing, should be handled in the print functions.
             printOutputExp();
-
             return;
         }
 
@@ -427,7 +443,6 @@ public:
         }
 
         // We now form the chart
-
         // convert minterm values into column indices
         map<int, int> minterm_to_column;
         for (int i = 0; i < minterms.size(); i++)
@@ -450,16 +465,15 @@ public:
                 }
             }
         }
-        // We now find essential prime implicants, columns that have only one 'X'
 
+        // We now find essential prime implicants, columns that have only one 'X'
         vector<bool> minterm_covered(minterms.size(), false); // to check if the minterm is covered or not;
         vector<bool> pi_used(matched.size(), false);          // to check if the prime implicant was used before;
-
         bool found_essential;
+
         do
         {
             found_essential = false; // Assume none are found in this loop at the beginning
-
             // Iterate through each column (minterm)
             for (int j = 0; j < minterms.size(); j++)
             {
@@ -468,6 +482,7 @@ public:
 
                 int cover_count = 0;
                 int last_pi_index = -1;
+
                 // Iterate through each ROW (PI) for this column
                 for (int i = 0; i < matched.size(); i++)
                 {
@@ -477,6 +492,7 @@ public:
                         last_pi_index = i;
                     }
                 }
+
                 // If count is 1, it's an essential PI
                 if (cover_count == 1)
                 {
@@ -488,7 +504,7 @@ public:
                     int pi_index = last_pi_index;
 
                     // we add this PI to our final solution
-                    finalPIs.push_back(matched[pi_index]);
+                    finalEPIs.push_back(matched[pi_index]);
                     pi_used[pi_index] = true;
 
                     // mark all minterms covered by this PI as covered
@@ -504,169 +520,499 @@ public:
         } while (found_essential);
 
         // We now need to cover Remaining Minterms
-        // Had to search the web for the algorithm, it's called Set Cover Approach using Greedy
+        // We will use Recursive search algorithm to find all possible combinations of minterms, had to search the web for the code.
 
-        bool all_covered = false;
-        while (!all_covered)
+        // Find remaining minterms and PIs.
+        set<int> remaining_minterms;
+        for (int i = 0; i < minterms.size(); i++)
         {
-            // Check if all minterms are covered
-            all_covered = true;
-            for (bool covered : minterm_covered)
+            if (!minterm_covered[i])
             {
-                if (!covered)
-                {
-                    all_covered = false;
-                    break;
-                }
+                remaining_minterms.insert(minterms[i]);
             }
-            if (all_covered)
-                break; // exit the loop because all minterms are covered
+        }
 
-            // Find the remaining PI that covers the most uncovered minterms
-            int best_pi_index = -1;
-            int max_new_covered = 0;
-            for (int i = 0; i < matched.size(); i++)
+        if (remaining_minterms.empty())
+        {
+            // This means that essential prime implicants covered everything
+            finalSol.push_back(finalEPIs);
+            return;
+        }
+
+        vector<int> remaining_pi_indices;
+        for (int i = 0; i < matched.size(); i++)
+        {
+            if (!pi_used[i])
             {
-                if (pi_used[i])
-                    continue; // skip the PI if it is already used
-
-                int current_new_covered = 0;
-                // Count how many new minterms the PI covers;
-                for (int j = 0; j < minterms.size(); j++)
-                {
-                    if (!minterm_covered[j] && chart[i][j])
-                    {
-                        current_new_covered++;
-                    }
-                }
-                if (current_new_covered > max_new_covered)
-                {
-                    max_new_covered = current_new_covered;
-                    best_pi_index = i;
-                }
+                remaining_pi_indices.push_back(i);
             }
-            if (best_pi_index == -1) // This shouldn't happen if matching() is correct, but will leave it for debugging
-            {
-                cout << "error: Could not cover all minterms." << endl;
-                break;
-            }
+        }
 
-            // Add the best PI to our solution
-            finalPIs.push_back(matched[best_pi_index]);
-            pi_used[best_pi_index] = true;
+        // we map every PI index to set of remaining minterms it covers
+        // we also map remaining minterms to set of PI indices that cover it.
+        map<int, set<int>> pi_to_minterms;
+        map<int, set<int>> minterm_to_pis;
 
-            // Mark all minterms that the PI we added covers as 'covered'
-            for (int k = 0; k < minterms.size(); k++)
+        for (int pi_index : remaining_pi_indices)
+        {
+            for (int minterm : matched[pi_index].mins)
             {
-                if (chart[best_pi_index][k])
+                if (remaining_minterms.count(minterm))
                 {
-                    minterm_covered[k] = true;
+                    pi_to_minterms[pi_index].insert(minterm);
+                    minterm_to_pis[minterm].insert(pi_index);
                 }
             }
         }
 
+        // Remove PIs that don't cover any remaining minterms
+        vector<int> final_remaining_pis;
+        for (int pi_index : remaining_pi_indices)
+        {
+            if (!pi_to_minterms[pi_index].empty())
+            {
+                final_remaining_pis.push_back(pi_index);
+            }
+        }
+
+        // We now solve the reduced chart
+        vector<vector<int>> sub_solutions_indices = solveRecursive(pi_to_minterms, minterm_to_pis);
+
+        // Combine EPIs with each sub-solution (Prime implicants)
+        for (const auto &index_set : sub_solutions_indices)
+        {
+            vector<implicant> full_solution = finalEPIs;
+            for (int pi_index : index_set)
+            {
+                full_solution.push_back(matched[pi_index]);
+            }
+            finalSol.push_back(full_solution);
+        }
+
+        if (sub_solutions_indices.empty() && !remaining_minterms.empty())
+        {
+            cout << "Error: Could not find any solution for remaining minterms.";
+        }
+
         return;
+    }
+
+    vector<vector<int>> solveRecursive(map<int, set<int>> pi_to_minterms, map<int, set<int>> minterm_to_pis)
+    {
+        // Apply dominance rules repeatedly until the chart stabilizes
+        while (applyDominance(pi_to_minterms, minterm_to_pis))
+            ;
+
+        // Base Case 1: All minterms are covered
+        if (minterm_to_pis.empty())
+        {
+            return {{}};
+        }
+
+        // Base Case 2: Minterms remain but no PIs to cover them
+        if (pi_to_minterms.empty())
+        {
+            return {};
+        }
+
+        int best_minterm = -1;
+        int min_pis = 1000000;
+
+        for (const auto &pair : minterm_to_pis)
+        {
+            if (pair.second.size() < min_pis)
+            {
+                min_pis = pair.second.size();
+                best_minterm = pair.first;
+            }
+        }
+
+        set<int> covering_pis = minterm_to_pis[best_minterm];
+        vector<vector<int>> all_solutions;
+
+        for (int pi_index : covering_pis)
+        {
+            // Create copies of the charts to modify for the recursive call
+            map<int, set<int>> next_pi_map = pi_to_minterms;
+            map<int, set<int>> next_minterm_map = minterm_to_pis;
+
+            // Get all minterms covered by this chosen PI
+            set<int> minterms_covered_by_pi = next_pi_map[pi_index];
+
+            // Remove this PI and all minterms it covers
+            next_pi_map.erase(pi_index);
+            for (int m : minterms_covered_by_pi)
+            {
+                next_minterm_map.erase(m);
+            }
+
+            // Remove this PI from all other minterm-to-PI lists
+            for (auto &pair : next_minterm_map)
+            {
+                pair.second.erase(pi_index);
+            }
+
+            // Recurse
+            vector<vector<int>> sub_solutions = solveRecursive(next_pi_map, next_minterm_map);
+
+            // Add our chosen PI to all returned solutions
+            for (auto &sol : sub_solutions)
+            {
+                sol.push_back(pi_index);
+                all_solutions.push_back(sol);
+            }
+        }
+        return findMinimalSolutions(all_solutions);
+    }
+
+    bool applyDominance(map<int, set<int>> &pi_to_minterms, map<int, set<int>> &minterm_to_pis)
+    {
+        bool changed = false;
+
+        // We first apply column dominance
+        // If minterm x is covered by a superset of PIs that cover minterm y, then x is dominant. We only need to cover y and x will automatically be covered.
+        // So, we can remove column x from the chart.
+        vector<int> minterms_to_remove;
+        vector<int> minterms_list;
+
+        for (auto const &[minterm, pis] : minterm_to_pis)
+            minterms_list.push_back(minterm);
+
+        for (int i = 0; i < minterms_list.size(); ++i)
+        {
+            for (int j = 0; j < minterms_list.size(); ++j)
+            {
+                if (i == j)
+                    continue;
+
+                int m_x = minterms_list[i];
+                int m_y = minterms_list[j];
+
+                if (minterm_to_pis.find(m_x) == minterm_to_pis.end() || minterm_to_pis.find(m_y) == minterm_to_pis.end())
+                    continue;
+
+                set<int> pis_x = minterm_to_pis[m_x];
+                set<int> pis_y = minterm_to_pis[m_y];
+
+                // Check if pis_x is a superset of pis_y
+                if (std::includes(pis_x.begin(), pis_x.end(), pis_y.begin(), pis_y.end()))
+                {
+                    // x is dominant over y. Remove x.
+                    if (find(minterms_to_remove.begin(), minterms_to_remove.end(), m_x) == minterms_to_remove.end())
+                    {
+                        minterms_to_remove.push_back(m_x);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        for (int m : minterms_to_remove)
+        {
+            minterm_to_pis.erase(m);
+            // Also remove this minterm from the pi_to_minterms map
+            for (auto &pair : pi_to_minterms)
+            {
+                pair.second.erase(m);
+            }
+        }
+
+        if (changed)
+            return true; // Re-run after one change
+
+        // we now apply row dominance
+        // If PI x covers a superset of minterms that PI y covers, the x is dominant and always a better or equal choice of y
+        // So, we can remove row y from the chart.
+        vector<int> pis_to_remove;
+        vector<int> pis_list;
+
+        for (auto const &[pi, minterms] : pi_to_minterms)
+            pis_list.push_back(pi);
+
+        for (int i = 0; i < pis_list.size(); ++i)
+        {
+            for (int j = 0; j < pis_list.size(); ++j)
+            {
+                if (i == j)
+                    continue;
+
+                int pi_x = pis_list[i];
+                int pi_y = pis_list[j];
+
+                if (pi_to_minterms.find(pi_x) == pi_to_minterms.end() || pi_to_minterms.find(pi_y) == pi_to_minterms.end())
+                    continue;
+
+                set<int> mins_x = pi_to_minterms[pi_x];
+                set<int> mins_y = pi_to_minterms[pi_y];
+
+                // Check if mins_x is a superset of mins_b
+                if (std::includes(mins_x.begin(), mins_x.end(), mins_y.begin(), mins_y.end()))
+                {
+                    // x is dominant over y. Remove y.
+                    if (find(pis_to_remove.begin(), pis_to_remove.end(), pi_y) == pis_to_remove.end())
+                    {
+                        pis_to_remove.push_back(pi_y);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        for (int pi : pis_to_remove)
+        {
+            pi_to_minterms.erase(pi);
+            // Also remove this PI from the minterm_to_pis map
+            for (auto &pair : minterm_to_pis)
+            {
+                pair.second.erase(pi);
+            }
+        }
+
+        return changed;
+    }
+
+    // Return solutions with minimum size
+    vector<vector<int>> findMinimalSolutions(vector<vector<int>> &all_solutions)
+    {
+        if (all_solutions.empty())
+            return {};
+
+        int min_size = 1000000;
+        for (const auto &sol : all_solutions)
+        {
+            if (sol.size() < min_size)
+            {
+                min_size = sol.size();
+            }
+        }
+
+        vector<vector<int>> minimal_solutions;
+        for (const auto &sol : all_solutions)
+        {
+            if (sol.size() == min_size)
+            {
+                // Check for uniqueness before adding
+                bool duplicate = false;
+                for (const auto &min_sol : minimal_solutions)
+                {
+                    if (set<int>(sol.begin(), sol.end()) == set<int>(min_sol.begin(), min_sol.end()))
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate)
+                {
+                    minimal_solutions.push_back(sol);
+                }
+            }
+        }
+        return minimal_solutions;
     }
 
     void printAllFinalPIs()
     {
         cout << "\n\nThe solution Prime Implicants are:\n";
 
-        for (int i = 0; i < finalPIs.size(); i++)
+        for (int i = 0; i < finalSol.size(); i++) // Iterate over all solutions
         {
-
-            cout << "PI" << setw(2) << i + 1 << ":" << " (";
-            bool first = true;
-            for (int a : finalPIs[i].mins)
+            cout << "Solution " << i + 1 << ":\n";
+            for (int j = 0; j < finalSol[i].size(); j++) // Iterate over PIs in that solution
             {
-                if (!first)
-                    cout << ", ";
-                cout << a;
-                first = false;
+                cout << "  PI (";
+                bool first = true;
+                for (int a : finalSol[i][j].mins)
+                {
+                    if (!first)
+                        cout << ", ";
+                    cout << a;
+                    first = false;
+                }
+                cout << ")" << " --> " << finalSol[i][j].binary << endl;
             }
-
-            cout << ")" << setw(2) << " --> " << finalPIs[i].binary << endl;
         }
-
         cout << "\n---------------------------------------------------------------";
     }
 
     void printOutputExp()
     {
-        cout << "\n\nThe Final Expression:\n";
-        cout << "f(";
-        bool first = true;
-        for (int i = 0; i < numvar; i++)
-        {
-            if (!first)
-                cout << ", ";
-            cout << char(i + 65);
-            first = false;
-        }
-        cout << ") = ";
+        cout << "\n\nThe Final Expression(s):\n";
 
-        first = true;
-        for (implicant a : finalPIs)
+        if (finalSol.empty() && minterms.empty())
         {
-            if (!first)
-                cout << " + ";
-            // bool firstVar = true; // nested flag method
-            for (int i = 0; i < a.binary.size(); i++)
+            cout << "f = 0" << endl; // Handle no minterms case
+            cout << "\n---------------------------------------------------------------";
+            return;
+        }
+
+        if (finalSol.empty() && !minterms.empty())
+        {
+            cout << "No solution found." << endl;
+            cout << "\n---------------------------------------------------------------";
+            return;
+        }
+
+        for (int i = 0; i < finalSol.size(); i++)
+        {
+            cout << "f" << i + 1 << "(";
+            bool first = true;
+            for (int j = 0; j < numvar; j++)
             {
-                if (a.binary[i] == '0' || a.binary[i] == '1') // only in these cases we should print a corresponding variable
-                {
-                    // if (!firstVar)
-                    //     cout << '.';
-
-                    if (a.binary[i] == '0')
-                        cout << char(i + 65) << '\'';
-
-                    if (a.binary[i] == '1')
-                        cout << char(i + 65);
-
-                    //                firstVar = false;
-                }
+                if (!first)
+                    cout << ", ";
+                cout << char(j + 65);
+                first = false;
             }
-            first = false;
+            cout << ") = ";
+
+            first = true;
+            for (implicant a : finalSol[i])
+            {
+                if (!first)
+                    cout << " + ";
+
+                bool term_has_vars = false;
+                for (int j = 0; j < a.binary.size(); j++)
+                {
+                    if (a.binary[j] == '0' || a.binary[j] == '1')
+                    {
+                        term_has_vars = true;
+                        if (a.binary[j] == '0')
+                            cout << char(j + 65) << '\'';
+                        if (a.binary[j] == '1')
+                            cout << char(j + 65);
+                    }
+                }
+                if (!term_has_vars) // Handle case like "---" which is '1'
+                {
+                    cout << "1";
+                }
+                first = false;
+            }
+            cout << endl;
         }
-        cout << endl;
         cout << "\n---------------------------------------------------------------";
         return;
     }
 
-    void printVerilogModule(const string &moduleName = "Function",vector<string> Output={})
+    void printVerilogModule(const string &moduleName = "Function", vector<string> Output = {})
     {
-        cout << "\n\nVerilog Module:\n\n";
-        int var=Output[0].size();
-        if (var == 0)
-            cout << "could not print verilog module\n";
+        cout << "\n\nVerilog Module (for first solution):\n\n";
 
-        cout << moduleName << "( input [" << var-1 << ":0] vars, output out)\n";
-        for (int i = 0; i <var; i++){
-            cout << "    wire not_var_" << i << ";" << endl;
-            cout << "    not inv_" << i << " (not_var_" << i << ", vars[" << i << "]);" << endl;
+        if (finalSol.empty())
+        {
+            cout << "No solution to generate Verilog for." << endl;
+            cout << "\n---------------------------------------------------------------";
+            return;
         }
-        cout << endl;
-        for (int i = 0; i <Output.size(); i++) {
-            cout << "wire term" << i << ";" << endl;
+
+        // Use the first solution
+        vector<implicant> firstSolution = finalSol[0];
+        vector<string> binaryOutputs;
+        for (const auto &imp : firstSolution)
+        {
+            binaryOutputs.push_back(imp.binary);
         }
-        for (int i = 0; i <Output.size(); i++) {
-            cout << "and and_out" << i << "(term" << i;
-            for (int j=0;i<var;j++) {
-                char curr=Output[i][j];
-                if (curr==1) {
-                  cout  <<",vars[" << j<<"]";
-                }else if (curr==0) {
-                    cout << ",not_var_" << j;
+
+        if (binaryOutputs.empty())
+        {
+            // Handle f=0 case
+            cout << "module " << moduleName << "( output out );\n";
+            cout << "  assign out = 1'b0;\n";
+            cout << "endmodule\n";
+            cout << "\n---------------------------------------------------------------";
+            return;
+        }
+
+        // Check for f=1 case
+        bool f_is_one = false;
+        for (const string &term : binaryOutputs)
+        {
+            bool all_dashes = true;
+            for (char c : term)
+            {
+                if (c != '-')
+                {
+                    all_dashes = false;
+                    break;
                 }
             }
-            cout << ");" <<endl;
+            if (all_dashes)
+            {
+                f_is_one = true;
+                break;
+            }
         }
-        cout << "or final (out";
-        for (int i = 0; i <Output.size(); i++) {
-            cout << ",term" << i;
+
+        if (f_is_one)
+        {
+            cout << "module " << moduleName << "( output out );\n";
+            cout << "  assign out = 1'b1;\n";
+            cout << "endmodule\n";
+            cout << "\n---------------------------------------------------------------";
+            return;
         }
-        cout << ");"<<endl;
+
+        int var = numvar;
+        if (var == 0)
+        {
+            cout << "could not print verilog module (0 variables)\n";
+            return;
+        }
+
+        cout << "module " << moduleName << "( input [" << var - 1 << ":0] vars, output out );\n";
+
+        // Create inverters
+        for (int i = 0; i < var; i++)
+        {
+            cout << "  wire not_var_" << i << ";" << endl;
+            cout << "  not inv_" << i << " (not_var_" << i << ", vars[" << i << "]);" << endl;
+        }
+        cout << endl;
+
+        // Create wires for each AND term
+        for (int i = 0; i < binaryOutputs.size(); i++)
+        {
+            cout << "  wire term" << i << ";" << endl;
+        }
+        cout << endl;
+
+        // Create AND gates
+        for (int i = 0; i < binaryOutputs.size(); i++)
+        {
+            cout << "  and and_out" << i << "(term" << i;
+            bool has_inputs = false;
+            for (int j = 0; j < var; j++)
+            {
+                char curr = binaryOutputs[i][j];
+                if (curr == '1')
+                {
+                    cout << ", vars[" << j << "]";
+                    has_inputs = true;
+                }
+                else if (curr == '0')
+                {
+                    cout << ", not_var_" << j;
+                    has_inputs = true;
+                }
+            }
+            if (!has_inputs)
+            {
+                // This should not happen if f=1 is caught, but as a fallback.
+                cout << ", 1'b1";
+            }
+            cout << ");" << endl;
+        }
+        cout << endl;
+
+        // Create final OR gate
+        cout << "  or final_or (out";
+        for (int i = 0; i < binaryOutputs.size(); i++)
+        {
+            cout << ", term" << i;
+        }
+        cout << ");" << endl;
+
         cout << "\nendmodule\n";
         cout << "\n---------------------------------------------------------------";
     }
@@ -677,22 +1023,30 @@ public:
         cout << "Number of Variables: " << numvar << endl;
         cout << "Minterms Involved: ";
         if (minterms.empty())
+        {
             cout << "---";
+        }
         else
+        {
             for (int i = 0; i < minterms.size(); i++)
             {
                 cout << minterms[i] << " ";
             }
+        }
         cout << endl;
 
         cout << "Don't Cares Involved: ";
         if (dontcares.empty())
+        {
             cout << "---";
+        }
         else
+        {
             for (int i = 0; i < dontcares.size(); i++)
             {
                 cout << dontcares[i] << " ";
             }
+        }
         cout << endl;
         cout << "\n---------------------------------------------------------------";
     }
@@ -701,13 +1055,13 @@ public:
     {
         cout << "\n---------------------------------------------------------------";
         readtxt();
-        PITable();
+        PITable(); // This now finds all solutions
 
         printMembers();
         printAllPossiblePIs();
-        printAllFinalPIs();
-
-        printOutputExp();
+        printAllFinalPIs();   // This will print all solutions
+        printOutputExp();     // This will print all expressions
+        printVerilogModule(); // This will print verilog for the *first* solution
 
         return;
     }
@@ -718,15 +1072,16 @@ private:
     vector<int> dontcares;
 
     vector<vector<implicant>> columns;
-    vector<implicant> matched;
-    vector<implicant> finalPIs; // to include the final set of Prime implicants that form the solution
+    vector<implicant> matched;          // All PIs
+    vector<implicant> finalEPIs;        // Just EPIs
+    vector<vector<implicant>> finalSol; // List of all minimal solutions
 };
 
 int main()
 {
 
     QuineMclausky app;
-    app.infile.open("C:\\Users\\Mohammad Dawood\\Desktop\\Digital Design I\\Project 1\\DD1-Project-1\\TestFiles\\Test1.txt");
+    app.infile.open("C:\\Uni\\Semeseters\\Fall 2025\\Digital Design I\\Projects\\DD1-Project-1\\DD1-Project-1\\TestFiles\\Test5.txt");
 
     if (app.infile.is_open())
     {
