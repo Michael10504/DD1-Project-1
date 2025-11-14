@@ -13,6 +13,8 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+using namespace std;
+
 struct implicant
 {
     set<int> mins;
@@ -339,9 +341,8 @@ public:
 
     void matching()
     {
-        // cout << "\nStarted Matching\n";
-        //  uses readtxt() and merge()
-        //  needs to create the implicants in the first column first.
+        // uses readtxt() and merge()
+        // needs to create the implicants in the first column first.
 
         columns.clear();
         columns.push_back(vector<implicant>()); // to make columns[0] available
@@ -437,16 +438,14 @@ public:
             }
             cout << ")" << setw(2) << " --> " << matched[i].binary << endl;
         }
-        // cout << "\nEnded Matching\n";
         cout << "\n---------------------------------------------------------------";
     }
 
     void PITable()
     {
-        // cout << "\nStarted PITable\n";
-        //  uses matching to get the PI vector and minterms vector members modified
-        //  and would use the printing fucntions later as final outputs (cancelled)
-        //  should create a vector<implicant> done/finalisedPIs,
+        // uses matching to get the PI vector and minterms vector members modified
+        // and would use the printing fucntions later as final outputs (cancelled)
+        // should create a vector<implicant> done/finalisedPIs,
         matching(); // returns all prime implicants
 
         finalEPIs.clear(); // to clear the Essential Prime Implicants vector
@@ -456,7 +455,6 @@ public:
         {
             cout << "No minterms to cover." << endl;
             // will print nothing, should be handled in the print functions.
-            // printOutputExp();
             cout << "Error: No minterms to find their prime implicants." << endl;
             return;
         }
@@ -845,6 +843,7 @@ public:
             {
                 cout << "Solution " << i + 1 << ":\n";
             }
+            cout << ") = ";
 
             for (int j = 0; j < finalSol[i].size(); j++) // Iterate over PIs in that solution
             {
@@ -861,6 +860,7 @@ public:
             }
         }
         cout << "\n---------------------------------------------------------------";
+        return;
     }
 
     void printOutputExp(int itsIndex, vector<implicant> aSolution)
@@ -891,7 +891,6 @@ public:
             cout << char(j + 65);
             first = false;
         }
-        cout << ") = ";
 
         first = true;
         for (implicant a : aSolution)
