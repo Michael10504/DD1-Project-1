@@ -416,7 +416,7 @@ public:
             cout << "No minterms to cover." << endl;
             // will print nothing, should be handled in the print functions.
             printOutputExp();
-            printVerilogModule();
+
             return;
         }
 
@@ -634,11 +634,39 @@ public:
         return;
     }
 
-    void printVerilogModule(const string &moduleName = "Function")
+    void printVerilogModule(const string &moduleName = "Function",vector<string> Output={})
     {
         cout << "\n\nVerilog Module:\n\n";
-        cout << "module function();\n";
+        int var=Output[0].size();
+        if (var == 0)
+            cout << "could not print verilog module\n";
 
+        cout << moduleName << "( input [" << var-1 << ":0] vars, output out)\n";
+        for (int i = 0; i <var; i++){
+            cout << "    wire not_var_" << i << ";" << endl;
+            cout << "    not inv_" << i << " (not_var_" << i << ", vars[" << i << "]);" << endl;
+        }
+        cout << endl;
+        for (int i = 0; i <Output.size(); i++) {
+            cout << "wire term" << i << ";" << endl;
+        }
+        for (int i = 0; i <Output.size(); i++) {
+            cout << "and and_out" << i << "(term" << i;
+            for (int j=0;i<var;j++) {
+                char curr=Output[i][j];
+                if (curr==1) {
+                  cout  <<",vars[" << j<<"]";
+                }else if (curr==0) {
+                    cout << ",not_var_" << j;
+                }
+            }
+            cout << ");" <<endl;
+        }
+        cout << "or final (out";
+        for (int i = 0; i <Output.size(); i++) {
+            cout << ",term" << i;
+        }
+        cout << ");"<<endl;
         cout << "\nendmodule\n";
         cout << "\n---------------------------------------------------------------";
     }
@@ -680,7 +708,7 @@ public:
         printAllFinalPIs();
 
         printOutputExp();
-        printVerilogModule();
+
         return;
     }
 
