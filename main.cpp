@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <cmath>
+#include <filesystem>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 struct implicant
 {
@@ -63,10 +65,9 @@ class QuineMclausky
 public:
     QuineMclausky() {}
 
-    ifstream infile;
-
     void readtxt()
     {
+        // cout << "\nStarted Reading\n";
         string line;
 
         if (!infile.is_open())
@@ -139,7 +140,7 @@ public:
         }
         else if (line[0] == 'M')
         {
-            vector<int> Maxterms;
+
             while (ss >> token)
             {
                 if (token[0] == ',')
@@ -178,7 +179,7 @@ public:
                 {
                     // skips
                 }
-                if (line[curr] == 'd' && isdigit(line[next])) // m1 -> m 1
+                if ((line[curr] == 'd' || line[curr] == 'D') && isdigit(line[next])) // d1 -> d 1
                 {
                     line.insert(line.begin() + next, ' ');
                     next++;
@@ -190,7 +191,7 @@ public:
                     next++;
                     curr++;
                 }
-                else if (line[curr] == ',' && isalpha(line[next])) //,m -> , m
+                else if (line[curr] == ',' && isalpha(line[next])) //,d -> , d
                 {
                     line.insert(line.begin() + next, ' ');
                     next++;
@@ -217,7 +218,28 @@ public:
                 }
             }
         }
+
+        for (int a : minterms)
+        {
+            if (a > pow(2, numvar) - 1)
+            {
+                terms_are_ok = false;
+                return;
+            }
+        }
+
+        for (int a : dontcares)
+        {
+            if (a > pow(2, numvar) - 1)
+            {
+                terms_are_ok = false;
+                return;
+            }
+        }
+
         return;
+
+        // cout << "\nEnded Reading\n";
     }
 
     bool isGreyCode(implicant a, implicant b)
@@ -317,8 +339,9 @@ public:
 
     void matching()
     {
-        // uses readtxt() and merge()
-        // needs to create the implicants in the first column first.
+        // cout << "\nStarted Matching\n";
+        //  uses readtxt() and merge()
+        //  needs to create the implicants in the first column first.
 
         columns.clear();
         columns.push_back(vector<implicant>()); // to make columns[0] available
@@ -365,7 +388,6 @@ public:
                 }
             }
             k++;
-            // cout << k << " "; // for testing
         }
 
         for (int i = columns.size() - 1; i >= 0; i--)
@@ -415,14 +437,16 @@ public:
             }
             cout << ")" << setw(2) << " --> " << matched[i].binary << endl;
         }
+        // cout << "\nEnded Matching\n";
         cout << "\n---------------------------------------------------------------";
     }
 
     void PITable()
     {
-        // uses matching to get the PI vector and minterms vector members modified
-        // and would use the printing fucntions later as final outputs (cancelled)
-        // should create a vector<implicant> done/finalisedPIs,
+        // cout << "\nStarted PITable\n";
+        //  uses matching to get the PI vector and minterms vector members modified
+        //  and would use the printing fucntions later as final outputs (cancelled)
+        //  should create a vector<implicant> done/finalisedPIs,
         matching(); // returns all prime implicants
 
         finalEPIs.clear(); // to clear the Essential Prime Implicants vector
@@ -432,7 +456,8 @@ public:
         {
             cout << "No minterms to cover." << endl;
             // will print nothing, should be handled in the print functions.
-            printOutputExp();
+            // printOutputExp();
+            cout << "Error: No minterms to find their prime implicants." << endl;
             return;
         }
 
@@ -594,6 +619,7 @@ public:
             cout << "Error: Could not find any solution for remaining minterms.";
         }
 
+        // cout << "\nEnded PITable\n";
         return;
     }
 
@@ -812,11 +838,14 @@ public:
 
     void printAllFinalPIs()
     {
-        cout << "\n\nThe solution Prime Implicants are:\n";
 
         for (int i = 0; i < finalSol.size(); i++) // Iterate over all solutions
         {
-            cout << "Solution " << i + 1 << ":\n";
+            if (finalSol.size() > 1)
+            {
+                cout << "Solution " << i + 1 << ":\n";
+            }
+
             for (int j = 0; j < finalSol[i].size(); j++) // Iterate over PIs in that solution
             {
                 cout << "  PI (";
@@ -834,9 +863,8 @@ public:
         cout << "\n---------------------------------------------------------------";
     }
 
-    void printOutputExp()
+    void printOutputExp(int itsIndex, vector<implicant> aSolution)
     {
-        cout << "\n\nThe Final Expression(s):\n";
 
         if (finalSol.empty() && minterms.empty())
         {
@@ -852,64 +880,63 @@ public:
             return;
         }
 
-        for (int i = 0; i < finalSol.size(); i++)
+        // for (int i = 0; i < finalSol.size(); i++)
+        // {
+        cout << "f" << itsIndex + 1 << "(";
+        bool first = true;
+        for (int j = 0; j < numvar; j++)
         {
-            cout << "f" << i + 1 << "(";
-            bool first = true;
-            for (int j = 0; j < numvar; j++)
-            {
-                if (!first)
-                    cout << ", ";
-                cout << char(j + 65);
-                first = false;
-            }
-            cout << ") = ";
-
-            first = true;
-            for (implicant a : finalSol[i])
-            {
-                if (!first)
-                    cout << " + ";
-
-                bool term_has_vars = false;
-                for (int j = 0; j < a.binary.size(); j++)
-                {
-                    if (a.binary[j] == '0' || a.binary[j] == '1')
-                    {
-                        term_has_vars = true;
-                        if (a.binary[j] == '0')
-                            cout << char(j + 65) << '\'';
-                        if (a.binary[j] == '1')
-                            cout << char(j + 65);
-                    }
-                }
-                if (!term_has_vars) // Handle case like "---" which is '1'
-                {
-                    cout << "1";
-                }
-                first = false;
-            }
-            cout << endl;
+            if (!first)
+                cout << ", ";
+            cout << char(j + 65);
+            first = false;
         }
-        cout << "\n---------------------------------------------------------------";
+        cout << ") = ";
+
+        first = true;
+        for (implicant a : aSolution)
+        {
+            if (!first)
+                cout << " + ";
+
+            bool term_has_vars = false;
+            for (int j = 0; j < a.binary.size(); j++)
+            {
+                if (a.binary[j] == '0' || a.binary[j] == '1')
+                {
+                    term_has_vars = true;
+                    if (a.binary[j] == '0')
+                        cout << char(j + 65) << '\'';
+                    if (a.binary[j] == '1')
+                        cout << char(j + 65);
+                }
+            }
+            if (!term_has_vars) // Handle case like "---" which is '1'
+            {
+                cout << "1";
+            }
+            first = false;
+        }
+        cout << endl;
+        //}
+
         return;
     }
 
-    void printVerilogModule(const string &moduleName = "Function", vector<string> Output = {})
+    void printVerilogModule(const string &moduleName = "Function", vector<implicant> aSolution = {})
     {
-        cout << "\n\nVerilog Module (for first solution):\n\n";
 
         if (finalSol.empty())
         {
-            cout << "No solution to generate Verilog for." << endl;
-            cout << "\n---------------------------------------------------------------";
+            cout << "No solutions to generate a Verilog module for." << endl;
+
             return;
         }
 
         // Use the first solution
-        vector<implicant> firstSolution = finalSol[0];
+        // vector<implicant> firstSolution = finalSol[0];
         vector<string> binaryOutputs;
-        for (const auto &imp : firstSolution)
+        for (const auto &imp : aSolution)
         {
             binaryOutputs.push_back(imp.binary);
         }
@@ -920,7 +947,7 @@ public:
             cout << "module " << moduleName << "( output out );\n";
             cout << "  assign out = 1'b0;\n";
             cout << "endmodule\n";
-            cout << "\n---------------------------------------------------------------";
+
             return;
         }
 
@@ -949,7 +976,7 @@ public:
             cout << "module " << moduleName << "( output out );\n";
             cout << "  assign out = 1'b1;\n";
             cout << "endmodule\n";
-            cout << "\n---------------------------------------------------------------";
+
             return;
         }
 
@@ -1014,13 +1041,35 @@ public:
         cout << ");" << endl;
 
         cout << "\nendmodule\n";
-        cout << "\n---------------------------------------------------------------";
     }
 
-    void printMembers() // for testing
+    void printMembers()
     {
         cout << "\n\nGivens:\n";
         cout << "Number of Variables: " << numvar << endl;
+        cout << "Variables: ";
+        for (int i = 0; i < numvar; i++)
+        {
+            char var = 'A' + i;
+            cout << var;
+            if (i != numvar - 1) // not the last
+                cout << ", ";
+        }
+        cout << endl;
+
+        if (!Maxterms.empty())
+        {
+            cout << "Maxterms Involved: ";
+            for (int i = 0; i < Maxterms.size(); i++)
+            {
+                cout << Maxterms[i] << " ";
+                if (i != Maxterms.size() - 1) // not the last
+                    cout << ", ";
+            }
+
+            cout << endl;
+        }
+
         cout << "Minterms Involved: ";
         if (minterms.empty())
         {
@@ -1031,6 +1080,8 @@ public:
             for (int i = 0; i < minterms.size(); i++)
             {
                 cout << minterms[i] << " ";
+                if (i != minterms.size() - 1) // not the last
+                    cout << ", ";
             }
         }
         cout << endl;
@@ -1045,6 +1096,9 @@ public:
             for (int i = 0; i < dontcares.size(); i++)
             {
                 cout << dontcares[i] << " ";
+                cout << minterms[i] << " ";
+                if (i != dontcares.size() - 1) // not the last
+                    cout << ", ";
             }
         }
         cout << endl;
@@ -1053,22 +1107,83 @@ public:
 
     void runQM() // literally runs everthing/all the functions
     {
+        // setting all memebrs before starting each time
+        terms_are_ok = true;
+
+        minterms.clear();
+        Maxterms.clear();
+        dontcares.clear();
+
+        columns.clear();
+        matched.clear();
+        finalEPIs.clear();
+        finalSol.clear();
+
         cout << "\n---------------------------------------------------------------";
         readtxt();
-        PITable(); // This now finds all solutions
+        if (terms_are_ok)
+        {
+            PITable(); // This now finds all solutions
 
-        printMembers();
-        printAllPossiblePIs();
-        printAllFinalPIs();   // This will print all solutions
-        printOutputExp();     // This will print all expressions
-        printVerilogModule(); // This will print verilog for the *first* solution
+            printMembers();
+            printAllPossiblePIs();
 
+            if (finalSol.size() > 1)
+                cout << "\n\nAll Possible Solutions:\n";
+            else
+                cout << "\n\nThe Only Solution:\n";
+
+            printAllFinalPIs(); // This will print all solutions
+
+            if (finalSol.size() > 1)
+                cout << "\n\nThe Final Expressions:\n";
+            else
+                cout << "\n\nThe Final Expression:\n";
+
+            int i = 0;
+            for (const auto a : finalSol)
+            {
+                printOutputExp(i, a); // This will print all expressions
+                i++;
+            }
+
+            cout << "\n---------------------------------------------------------------";
+
+            if (finalSol.size() > 1)
+                cout << "\n\nVerilog Modules:\n";
+            else
+                cout << "\n\nVerilog Module:\n";
+
+            i = 1;
+            for (const auto a : finalSol)
+            {
+                if (finalSol.size() > 1)
+                {
+                    cout << "\nModule " + to_string(i) + ":\n";
+                }
+                printVerilogModule("Function" + to_string(i), a); // This will print verilog for the *first* solution
+                i++;
+            }
+            cout << "\n---------------------------------------------------------------";
+        }
+        else
+        {
+            cout << "\nError: Minterms/Don't Cares exceed the possible boundaries.";
+            cout << "\n---------------------------------------------------------------";
+        }
+
+        infile.close();
         return;
     }
 
+    ifstream infile;
+
 private:
     int numvar;
+    bool terms_are_ok;
+
     vector<int> minterms;
+    vector<int> Maxterms; // in case there were
     vector<int> dontcares;
 
     vector<vector<implicant>> columns;
@@ -1081,17 +1196,91 @@ int main()
 {
 
     QuineMclausky app;
-    app.infile.open("C:\\Uni\\Semeseters\\Fall 2025\\Digital Design I\\Projects\\DD1-Project-1\\DD1-Project-1\\TestFiles\\Test5.txt");
+    string folder;
+    vector<fs::path> txtFiles;
+    fs::path p(folder);
+    do
+    {
+        cout << "Enter folder path: ";
+        getline(cin, folder);
 
-    if (app.infile.is_open())
+        fs::path p(folder);
+
+        if (!fs::exists(p) || !fs::is_directory(p))
+        {
+            cout << "\n---------------------------------------------------------------\n";
+            cout << "Error: invalid folder. Try Agian.\n";
+            cout << "---------------------------------------------------------------\n";
+        }
+        else
+        {
+
+            // Collect all txt files
+            for (const auto &entry : fs::directory_iterator(p))
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".txt")
+                {
+                    txtFiles.push_back(entry.path());
+                }
+            }
+
+            if (txtFiles.empty())
+            {
+                cout << "\n---------------------------------------------------------------\n";
+                cout << "No .txt files found in folder. Try adding some files!\n";
+                cout << "---------------------------------------------------------------\n";
+            }
+        }
+    } while ((!fs::exists(p) || !fs::is_directory(p)) && txtFiles.empty());
+
+    int choice;
+    cout << "---------------------------------------------------------------\n";
+    cout << "Found " << txtFiles.size() << " text files!\n";
+    do
     {
+        choice = 0;
+        cout << "\nChoices:\n";
+        for (int i = 0; i < txtFiles.size(); ++i)
+        {
+            cout << i + 1 << ". " << txtFiles[i].filename().string() << "\n";
+        }
+
+        cout << endl
+             << to_string(txtFiles.size() + 1) + ". Exit\n";
+
         cout << "---------------------------------------------------------------\n";
-        cout << "File opened successfully. Processing...";
-        app.runQM();
-    }
-    else
-    {
-        perror("Error opening file");
-    }
+        cout << "Choose: ";
+        cin >> choice;
+
+        if (choice < 1 || choice > (txtFiles.size() + 1))
+        {
+            cout << "\n---------------------------------------------------------------\n";
+            cout << "Invalid selection. Try Agian!\n";
+            cout << "-----------------------------------------------------------------\n\n";
+        }
+        else
+        {
+            if (choice > 0 || choice < (txtFiles.size()))
+            {
+                fs::path chosen = txtFiles[choice - 1];
+                cout << "You selected: " << chosen << "\n";
+                app.infile.open(chosen);
+
+                if (app.infile.is_open())
+                {
+                    cout << "---------------------------------------------------------------\n";
+                    cout << "File opened successfully. Processing...";
+                    app.runQM();
+
+                    app.infile.close();
+                }
+                else
+                {
+                    perror("Error opening file");
+                }
+            }
+        }
+    } while (choice != (txtFiles.size() + 1));
+
     return 0;
 }
