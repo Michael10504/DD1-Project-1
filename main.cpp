@@ -1091,9 +1091,8 @@ public:
         {
             for (int i = 0; i < dontcares.size(); i++)
             {
-                cout << dontcares[i] << " ";
-                cout << minterms[i] << " ";
-                if (i != dontcares.size() - 1) // not the last
+                cout << dontcares[i];
+                if (i != dontcares.size() - 1)
                     cout << ", ";
             }
         }
