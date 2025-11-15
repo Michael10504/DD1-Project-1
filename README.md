@@ -1,27 +1,27 @@
 ==================================
-Quine-McCluskey Logic Minimizer
+  Quine-McCluskey Logic Minimizer
 ==================================
 
 This is a C++ console application that automates the process of Boolean logic minimization using the Quine-McCluskey (QM) algorithm. It takes a text file specifying minterms (or maxterms) and don't-cares, and outputs all possible minimal Sum-of-Products (SOP) expressions and their corresponding Verilog modules.
 
 The entire program is implemented in a single .cpp file and driven by an interactive terminal menu.
 
-FEATURES
---------
+🚀 FEATURES
+----------
 - Tabulation Method: Finds all Prime Implicants (PIs) from the given terms.
 - Covering Algorithm: Identifies all Essential Prime Implicants (EPIs) and uses a recursive search to find all possible minimal solutions.
 - Comprehensive Output:
-    - Displays all found Prime Implicants.
-    - Lists all unique minimal solutions (combinations of PIs).
-    - Prints the final, human-readable Boolean expressions for each solution.
-    - Generates a complete Verilog module for each solution.
+    - 🧾 Displays all found Prime Implicants.
+    - 💡 Lists all unique minimal solutions (combinations of PIs).
+    - ✍️ Prints the final, human-readable Boolean expressions for each solution.
+    - 🤖 Generates a complete Verilog module for each solution.
 - Flexible Input:
     - Accepts both minterms (e.g., m1, m3) and maxterms (e.g., M1, M3).
     - Correctly processes don't-care terms.
 - Interactive Menu: Allows the user to select input files from a directory and run the algorithm repeatedly without restarting.
 
 
-HOW TO BUILD AND RUN
+🔧 HOW TO BUILD AND RUN
 --------------------
 
 Prerequisites:
@@ -49,7 +49,7 @@ Execution:
 Note on File Handling: The list of available files is generated when the program starts. You cannot add or remove test files while the program is running (you must restart it). However, you *can* edit the *contents* of an existing file, and the program will read the updated data the next time you select it from the menu.
 
 
-INPUT FILE FORMAT
+📁 INPUT FILE FORMAT
 -----------------
 
 The program expects .txt files formatted as follows:
@@ -66,7 +66,7 @@ This example specifies a function of 3 variables, with minterms (1, 3, 6, 7) and
     d0,d5
 
 
-PROGRAM DESIGN AND DATA STRUCTURES
+⚙️ PROGRAM DESIGN AND DATA STRUCTURES
 ----------------------------------
 
 The application is built around a central `QM` class and is divided into two fundamental phases.
